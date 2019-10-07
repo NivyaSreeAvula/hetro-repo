@@ -1,0 +1,56 @@
+import os
+import pandas as pd
+import numpy as np 
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+crime= pd.read_csv('pacCAC_2014.csv', sep=",")
+crime.columns
+crime.columns=crime.columns.str.strip()
+crime.columns=crime.columns.str.lower()
+crime.columns= crime.columns.str.replace(' ','_')
+crime.columns= crime.columns.str.replace('/','_')
+crime= crime.rename(columns = {"persons_arrested_during_the_year_male" : "crime_by_male", "persons_arrested_during_the_year_female" : "crime_by_female", 
+                   "persons_arrested_during_the_year_total" : "total"})
+
+crime1=crime.drop(columns=['year', 'total'])
+crime_melt = pd.melt(crime1, # data to reshape
+                            id_vars = ['states_uts', 'crime_head'], # identifier variable
+                            var_name = 'gender') #
+crime_melt['states_uts'].describe()                           
+crime_melt.pivot_table(index='states_uts', columns='gender', values='value', aggfunc='sum')                           
+crime_melt.loc[crime_melt.states_uts.str.contains('Chandigarh|Madhya Pradesh'),'crime_state']= 'Central'
+crime_melt.loc[crime_melt.states_uts.str.contains('Bihar|Jharkhand|Odisha|West Bengal'),'crime_state']= 'Eastern'
+crime_melt.loc[crime_melt.states_uts.str.contains('Arunachal Pradesh|Assam|Manipur|Megahalaya|Mizoram|Nagaland|Sikkim|Tripura'),'crime_state']= 'North Eastern'
+crime_melt.loc[crime_melt.states_uts.str.contains('Himachal Pradesh|Jammu & Kashmir|Punjab|Rajasthan|Uttar Pradesh|Uttarakhand'),'crime_state']= 'Northern'
+crime_melt.loc[crime_melt.states_uts.str.contains('Andhra Pradesh|Telangana|Karnataka|Kerala|Tamil Nadu'),'crime_state']= 'Southern'
+crime_melt.loc[crime_melt.states_uts.str.contains('Goa|Gujarat|Maharashtra'),'crime_state']= 'Western'
+
+crime_melt['crime_state'].value_counts()
+crime_melt.pivot_table(index='crime_state', columns='gender', values='value', aggfunc='sum')
+sns.set()  # use Seaborn style
+crime_melt.pivot_table(index='crime_state', columns='gender', values='value', aggfunc='sum').plot(figsize=(12,6))
+plt.ylabel('Total entries');
+
+sns.set()  # use Seaborn style
+crime_melt.pivot_table(index='gender', columns='crime_state', values='value', aggfunc='sum').plot(figsize=(12,6))
+plt.ylabel('Total entries');
+
+crime_melt.loc[crime_melt.crime_head.str.contains('3 - Rape|4.1 - Sexual Harassment (Section 354A IPC)|4.2 - Assault on women with intent to Disrobe (Section 354B IPC)|4.3 - Voyeurism (Section 354C IPC)|4.4 - Stalking (Section 354D IPC)|4.5 - Others assault|5 - Insult to the Modesty of Women (Girls Children) (Section 509 IPC)'),'crime_classification']='Crime against women'
+crime_melt.loc[crime_melt.crime_head.str.contains('1 - Murder(Section 302 and 303 IPC)|8 - Abetment of Suicide of child (Section 305 IPC)|20 - Attempt to commit Murder u/s 307 IPC'),'crime_classification']= 'Murder'
+crime_melt.loc[crime_melt.crime_head.str.contains('6.3 - Kidnapping for Ransom (Section 364A IPC)|6.4 - Kidnapping & Abduction of Women to compel her for marriage (Section 366 IPC)|6.5 - Other Kidnapping'),'crime_classification']= 'Kidnapping & Abduction1'
+crime_melt.loc[crime_melt.crime_head.str.contains('6.1 - Kidnapping & Abduction (Section 363 IPC)|6.2 - Kidnaping & Abduction in order to Murder (Section 364 IPC)'), 'crime_classification']= 'Kidnapping & Abduction'
+crime_melt.loc[crime_melt.crime_head.str.contains('16.1 - Offences committed against Migrant|16.1.1 - Offences committed against SC migrants|16.1.2 - Offences committed against ST migrants|16.1.3 - Offences committed against others migrants'),'crime_classification']= 'Child Labour'
+crime_melt.loc[crime_melt.crime_head.str.contains('16.2 - Offences committed against Locals|16.2.1 - Offences committed against Local SCs|16.2.2 - Offences committed against Local STs|16.2.3 - Offences committed against others locals'),'crime_classification']= 'Child Labour1'
+crime_melt.loc[crime_melt.crime_head.str.contains('2 - Infanticide (Section 315 IPC)|7 - Foeticide (Section 315 and 316 IPC)'),'crime_classification']= 'Abortion Infanticide'
+crime_melt.loc[crime_melt.crime_head.str.contains('17.1 - Under ITP Section 5|17.2 - Under ITP Section 6|17.3 - Under ITP Section 7|17.4 - Under ITP Section 8|17.5 - Other Section of ITP Act|18 - Juvenile Justice (Care and Protection of Children) Act, 2000'),'crime_classification']= 'Immoral Traffic'
+crime_melt.loc[crime_melt.crime_head.str.contains('19.1 - Under PCSO Act Section 4|19.2 - Under PCSO Act Section 6|19.3 - Under PCSO Act Section 8|19.4 - Under PCSO Act Section 10|19.5 - Under PCSO Act Sections 14 & 15|19.6 - Other Acts of PCSO'),'crime_classification']= 'PCSO'
+crime_melt.loc[crime_melt.crime_head.str.contains('15 - Transplantation of Human Organs Act, 1994|21 - Unnatural Offences u/s 377 IPC|22 - Other crimes committed against children'),'crime_classification']= 'Other crimes against children'
+crime_melt.loc[crime_melt.crime_head.str.contains('10 - Procuration of minor girls (Section 366-A IPC)|11 - Importation of Girls from Foreign Country (Section 366-B IPC)|12 - Buying of minors for prostitution (Section 373 IPC)|13 - Selling of minors for prostitution (Section 3 IPC)') ,'crime_classification']= 'Prostitution'
+crime_melt.loc[crime_melt.crime_head.str.contains('14 - Prohibition of Child Marriage Act, 2006'),'crime_classification']= 'Child Marraige'
+crime_melt.loc[crime_melt.crime_head.str.contains('9 - Exposure and Abandonment (Section 317 IPC)'),'crime_classification']= 'Abandonment'
+crime_melt.loc[crime_melt.crime_head.str.contains('Kidnapping & Abduction|Kidnapping & Abduction1'),'crime_classification']= 'Kidnapping & Abduction' 
+
+sns.set()  # use Seaborn style
+crime_melt.pivot_table(index='crime_classification', columns='crime_state', values='value', aggfunc='sum').plot(figsize=(20,8))
+plt.ylabel('Total entries');
